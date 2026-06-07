@@ -296,35 +296,63 @@ const WishlistPage = ({ wishlist, isAuthenticated, onOpenProduct, onBuyNow, onLo
   }
 
   return (
-    <div className="space-y-4">
+   <div className="space-y-4">
       <SectionHeader label="Favorites" title="Wishlist" />
       {wishlist.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-black/25 p-6 text-sm text-slate-400">
           Wishlist masih kosong. Tambahkan dari halaman store.
         </div>
       ) : null}
-      <div className="space-y-3">
+      
+      <div className="space-y-4">
         {wishlist.map((item) => (
           <div
             key={item.id}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-carbon/70 p-4"
+            className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-carbon/70 p-5 md:flex-row md:items-center md:justify-between"
           >
-            <div>
+            <div className="flex-1">
               <p className="text-lg font-semibold text-white">{item.product.title}</p>
               <p className="text-xs text-slate-500">
                 {item.product.publisher?.name || 'Unknown publisher'}
               </p>
+              
+              {/* Controls untuk Update Wishlist */}
+              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-white/10 pt-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-slate-400">Priority:</label>
+                  <select
+                    value={item.priority || 0}
+                    onChange={(e) => onUpdateItem(item.id, e.target.value, item.notifyDiscount)}
+                    className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-200"
+                  >
+                    <option value="1">High</option>
+                    <option value="2">Medium</option>
+                    <option value="3">Low</option>
+                  </select>
+                </div>
+                
+                <label className="flex items-center gap-2 text-xs text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={item.notifyDiscount || false}
+                    onChange={(e) => onUpdateItem(item.id, item.priority, e.target.checked)}
+                    className="rounded border-white/10 bg-black/40 text-rose-500 focus:ring-rose-500/50"
+                  />
+                  Notify on Discount
+                </label>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-3 md:flex-col md:items-end md:gap-2">
               <button
                 onClick={() => onOpenProduct(item.product.id)}
-                className="rounded-full border border-white/10 px-4 py-2 text-xs text-slate-300"
+                className="w-full rounded-full border border-white/10 px-4 py-2 text-xs text-slate-300 md:w-auto"
               >
                 Open Store
               </button>
               <button
                 onClick={() => onBuyNow(item.product.id)}
-                className="rounded-full bg-rose-500 px-4 py-2 text-xs font-semibold text-white"
+                className="w-full rounded-full bg-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-rose-500/20 md:w-auto"
               >
                 Buy Now
               </button>
@@ -332,9 +360,6 @@ const WishlistPage = ({ wishlist, isAuthenticated, onOpenProduct, onBuyNow, onLo
           </div>
         ))}
       </div>
-      <p className="text-xs text-slate-500">
-        Backend saat ini hanya menyediakan tambah dan ambil wishlist, jadi kontrol update/remove belum ditampilkan.
-      </p>
     </div>
   )
 }
@@ -1131,6 +1156,21 @@ const AppBackend = () => {
     }
   }
 
+  const handleUpdateWishlist = async (wishlistId, priority, notifyDiscount) => {
+    try {
+      await updateWishlist(token, wishlistId, {
+        priority: Number(priority),
+        notify_discount: notifyDiscount,
+      })
+      
+      // Refresh session untuk menarik data wishlist terbaru dari backend
+      await refreshSession(token)
+      showToast('Preferensi wishlist berhasil diperbarui')
+    } catch (requestError) {
+      showToast(requestError.message, 'error')
+    }
+  }
+
   const handleTopUp = async (amount, paymentMethod) => {
     if (!isAuthenticated) {
       setActivePage('login')
@@ -1257,6 +1297,7 @@ const AppBackend = () => {
             onOpenProduct={handleOpenProduct}
             onBuyNow={handleOpenPaymentForProduct}
             onLogin={() => handleNavigate('login')}
+            onUpdateItem={handleUpdateWishlist}
           />
         ) : null}
 

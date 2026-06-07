@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://gamestore-be-1.onrender.com').replace(/\/$/, '')
 const TOKEN_STORAGE_KEY = 'gamevault.token'
 
 const buildUrl = (path) => `${API_BASE_URL}${path}`
@@ -114,6 +114,7 @@ const checkout = (token, payload) => request('/api/checkout', { method: 'POST', 
 const topUp = (token, payload) => request('/api/wallet/topup', { method: 'POST', token, body: payload })
 const createReview = (token, productId, payload) => request(`/api/products/${productId}/reviews`, { method: 'POST', token, body: payload })
 const markHelpful = (token, reviewId) => request(`/api/reviews/${reviewId}/helpful`, { method: 'POST', token })
+const updateWishlist = (token, wishlistId, payload) => request(`/api/wishlists/${wishlistId}`, { method: 'PUT', token, body: payload })
 
 export {
   API_BASE_URL,
