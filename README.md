@@ -55,16 +55,6 @@ GameVault adalah frontend toko game digital berbasis React + Vite yang terhubung
    npm run preview
    ```
 
-## Catatan Git
-
-File yang sebaiknya tidak di-commit:
-
-- `node_modules/`
-- `dist/`
-- `.env`
-- log instalasi / runtime
-- file editor/OS sementara seperti `.vscode/`, `.idea/`, `.DS_Store`, dan `Thumbs.db`
-
 ## Struktur Singkat
 
 - `src/AppBackend.jsx` — UI utama yang terhubung ke backend
@@ -77,7 +67,3 @@ File yang sebaiknya tidak di-commit:
 - Data game diambil dari API backend
 - Tombol publisher di halaman store membuka halaman publisher dedicated
 - Checkout dan wishlist tetap diproses lewat backend
-
-## Lisensi
-
-Belum ditentukan.
