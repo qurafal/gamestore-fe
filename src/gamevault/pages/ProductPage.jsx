@@ -349,7 +349,6 @@ export const ProductPage = ({
               kamu punya review ID, panel ini bisa digunakan langsung.
             </p>
           </div>
-          // Bagian ini untuk menampilkan review (TODO)
           <section className="mt-10">
             <h3 className="text-xl font-semibold text-white mb-4">
               User Reviews
@@ -401,7 +400,7 @@ export const ProductPage = ({
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          {/* <div className="flex flex-wrap gap-3">
             <button
               onClick={() => onOpenLibrary()}
               className="rounded-full border border-white/10 px-5 py-3 text-sm text-slate-300 transition hover:text-white"
@@ -414,7 +413,7 @@ export const ProductPage = ({
             >
               Checkout
             </button>
-          </div>
+          </div> */}
         </div>
       </section>
     </div>
