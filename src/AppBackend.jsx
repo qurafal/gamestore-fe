@@ -67,10 +67,33 @@ const AppBackend = () => {
   const [toast, setToast] = useState(null);
   const [reviewedProductIds, setReviewedProductIds] = useState([]);
   const [catalogQuery, setCatalogQuery] = useState("");
+  // const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState();
+  const [reviews, setReviews] = useState([]);
+  // const [loading, setLoading] = useState(true);
 
   const isAuthenticated = Boolean(token && currentUser);
   const hasPublisherAccess = currentUser?.role === "PUBLISHER";
+  const loadProductDetail = async (id) => {
+    try {
+      // setLoading(true); // Opsional jika Anda ingin indikator loading
+      const response = await getProductDetail(id); // Gunakan import fungsi yang sudah ada
+      const data = response.data || response; // Sesuaikan dengan struktur API Anda
 
+      setProduct(data);
+      setReviews(data.reviews || []);
+    } catch (error) {
+      console.error("Gagal memuat detail:", error);
+      showToast("Gagal memuat detail produk", "error");
+    } finally {
+      // setLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (activePage === "product" && selectedProductId) {
+      loadProductDetail(selectedProductId);
+    }
+  }, [activePage, selectedProductId]);
   const showToast = (message, kind = "success") => {
     setToast(createToastState(message, kind));
   };
@@ -81,7 +104,7 @@ const AppBackend = () => {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-const loadCatalog = async (search = catalogQuery) => {
+  const loadCatalog = async (search = catalogQuery) => {
     setLoadingCatalog(true);
     setError("");
     try {
@@ -89,17 +112,16 @@ const loadCatalog = async (search = catalogQuery) => {
       const normalized = dedupeById(
         (response.data || []).map(normalizeProduct),
       );
-      
+
       // ✅ TAMBAHKAN BARIS INI: Sortir game dari ID terbesar ke terkecil (Newest First)
       const sortedNewestFirst = [...normalized].sort((a, b) => b.id - a.id);
-      
+
       // ✅ Ubah setProducts menjadi menggunakan data yang sudah disortir
       setProducts(sortedNewestFirst);
       setCatalogQuery(search);
-      
+
       if (!selectedProductId && sortedNewestFirst.length > 0)
         setSelectedProductId(sortedNewestFirst[0].id);
-        
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -163,7 +185,7 @@ const loadCatalog = async (search = catalogQuery) => {
     }
   }, [token]);
 
- useEffect(() => {
+  useEffect(() => {
     // Jika user punya akses Publisher dan sedang tidak melihat studio lain, kunci ke studionya sendiri
     if (hasPublisherAccess && !selectedPublisherId) {
       setSelectedPublisherId(currentUser?.publisherId || null);
@@ -256,9 +278,17 @@ const loadCatalog = async (search = catalogQuery) => {
     setSelectedProductId(productId);
     try {
       const response = await getProductDetail(productId);
-      const product = normalizeProduct(response.data || response);
+      // JSON Anda memiliki struktur { data: { product_id, reviews, ... } }
+      const productData = response.data.data;
+
+      setProduct(productData); // Simpan objek produk
+      setReviews(productData.reviews || []); // Simpan array reviews
+
+      // Opsional: update juga produk di list global
       setProducts((current) =>
-        current.map((item) => (item.id === product.id ? product : item)),
+        current.map((item) =>
+          item.id === productData.product_id ? productData : item,
+        ),
       );
     } catch (requestError) {
       showToast(requestError.message, "error");
@@ -463,31 +493,32 @@ const loadCatalog = async (search = catalogQuery) => {
       showToast(requestError.message, "error");
     }
   };
-const handleCreateProduct = async ({ title, price, studioName }) => {
+  const handleCreateProduct = async ({ title, price, studioName }) => {
     try {
       const payload = {
         title,
         price: Number(price),
       };
-      
+
       // Jika ini pembuatan studio pertama, sertakan namanya
       if (studioName) {
-        payload.publisher_name = studioName; 
+        payload.publisher_name = studioName;
       }
 
       // 1. Eksekusi pembuatan game di backend
       const response = await createProduct(token, payload);
-      
+
       // Ambil ID game baru dari respons backend
-      const newGameId = response.data?.product_id || response.data?.id || response.product_id;
+      const newGameId =
+        response.data?.product_id || response.data?.id || response.product_id;
 
       // 2. Tarik ulang sesi pengguna (agar Role berubah jadi PUBLISHER)
       await refreshSession(token);
-      
-      // 3. ✨ KUNCI PERBAIKAN ✨ 
+
+      // 3. ✨ KUNCI PERBAIKAN ✨
       // Tarik ulang seluruh katalog agar game baru turun membawa relasi nama Publisher-nya secara utuh
       await loadCatalog(catalogQuery);
-      
+
       // 4. Pastikan state Dashboard Publisher mengunci ke ID Studio Anda yang baru
       const updatedProfile = readStoredProfile();
       if (updatedProfile?.publisherId) {
@@ -495,7 +526,7 @@ const handleCreateProduct = async ({ title, price, studioName }) => {
       }
 
       showToast(response.message || "Studio dan game berhasil dibuat!");
-      
+
       // Kembalikan objek ID agar modal bisa lanjut ke Langkah 2 (Unggah Kover)
       return { id: newGameId };
     } catch (requestError) {
@@ -503,7 +534,6 @@ const handleCreateProduct = async ({ title, price, studioName }) => {
       throw requestError;
     }
   };
-
 
   const handleUploadProductCover = async (productId, coverFile) => {
     if (!coverFile) return;
@@ -570,15 +600,7 @@ const handleCreateProduct = async ({ title, price, studioName }) => {
   const ownedCount = library.length;
   const wishlistCount = wishlist.length;
 
-
-  // const [reviews, setReviews] = useState([]);
-
-//   const loadProductDetail = async (id) => {
-//   // Pastikan backend Anda sudah meng-include reviews
-//   const response = await getProductDetail(id); // Harusnya mengembalikan { product, reviews }
-//   setSelectedProduct(response.data.product);
-//   setReviews(response.data.reviews); // Simpan review ke state
-// };
+  //   const [reviews, setReviews] = useState([]);
 
   return (
     <div className="flex min-h-screen flex-col bg-midnight text-slate-100">
@@ -620,7 +642,7 @@ const handleCreateProduct = async ({ title, price, studioName }) => {
 
         {activePage === "product" ? (
           <ProductPage
-            // reviews=
+            reviews={reviews}
             product={selectedProduct}
             isAuthenticated={isAuthenticated}
             isOwned={
@@ -684,7 +706,7 @@ const handleCreateProduct = async ({ title, price, studioName }) => {
             onBack={() => handleNavigate("product")}
             onCreateProduct={handleCreateProduct}
             onUploadProductCover={handleUploadProductCover}
-            canManagePublisher={hasPublisherAccess} 
+            canManagePublisher={hasPublisherAccess}
           />
         ) : null}
 

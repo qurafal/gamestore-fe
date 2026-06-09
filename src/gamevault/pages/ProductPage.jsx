@@ -29,7 +29,8 @@ export const ProductPage = ({
   const [isRecommend, setIsRecommend] = useState(true);
   const [helpfulReviewId, setHelpfulReviewId] = useState("");
   const accent = pickPalette(product?.id || 0);
-
+  
+  // const reviews = product.reviews || [];
   if (!product) {
     return (
       <EmptyState
