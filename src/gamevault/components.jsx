@@ -89,7 +89,7 @@ export const AppNavbar = ({
         { key: "browse", label: "Browse", icon: Search },
         ...(isPublisher
           ? [{ key: "publisher", label: "Publisher", icon: Sparkles }]
-          : []),
+          : [{key: "publisher", label: "Mulai Jual Game", icon: Sparkles}]),
         { key: "library", label: "Library", icon: Library },
         { key: "wishlist", label: "Wishlist", icon: Heart },
         { key: "profile", label: "Profile", icon: User },

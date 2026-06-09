@@ -11,6 +11,7 @@ import {
 
 export const ProductPage = ({
   product,
+  reviews = [],
   isAuthenticated,
   isOwned,
   onOpenPublisher,
@@ -348,6 +349,38 @@ export const ProductPage = ({
               kamu punya review ID, panel ini bisa digunakan langsung.
             </p>
           </div>
+          // Bagian ini untuk menampilkan review (TODO)
+          <section className="mt-10">
+            <h3 className="text-xl font-semibold text-white mb-4">
+              User Reviews
+            </h3>
+            {reviews.length > 0 ? (
+              <div className="grid gap-4">
+                {reviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium text-white">
+                        {review.user?.username || "Anonymous"}
+                      </p>
+                      <span className="text-sm text-emerald-400">
+                        {review.rating} Stars
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">
+                      {review.review_text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 italic">
+                Belum ada ulasan untuk game ini.
+              </p>
+            )}
+          </section>
 
           <div className="space-y-3">
             <label className="text-xs uppercase tracking-[0.22em] text-slate-500">

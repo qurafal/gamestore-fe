@@ -123,7 +123,6 @@ const request = async (path, { method = "GET", body, token } = {}) => {
 };
 
 const normalizeDecimal = (value) => Number(value ?? 0);
-
 const normalizeProduct = (product) => ({
   id: product.product_id ?? product.id,
   productId: product.product_id ?? product.id,
@@ -134,12 +133,17 @@ const normalizeProduct = (product) => ({
   releaseDate: product.release_date || null,
   ageRating: product.age_rating || "Unknown",
   coverUrl: product.cover_url || null,
-  publisher: product.publisher
-    ? {
-        id: product.publisher.publisher_id ?? product.publisher.id,
-        name: product.publisher.name,
-      }
+  
+  // ✅ PERBAIKAN EMAS ANDA ADA DI SINI:
+  // Baca langsung dari 'product.publisher_id' sesuai gambar database Anda
+  publisher: product.publisher_id 
+    ? { 
+        id: product.publisher_id, 
+        // Jika backend tidak mengirim nama, gunakan nama sementara agar UI tidak error
+        name: product.publisher?.name || "Studio Anda" 
+      } 
     : null,
+
   platforms: Array.isArray(product.platforms)
     ? product.platforms.map((platform) => ({
         id: platform.platform_id ?? platform.id,
@@ -154,7 +158,10 @@ const normalizeProfile = (profile) => ({
   email: profile.email,
   role: profile.role || profile.user_role || "USER",
   avatarUrl: normalizeAvatarUrl(profile.avatar_url || profile.avatarUrl),
-  publisherId: profile.publisher_id ?? profile.publisherId ?? null,
+  
+  // ✅ PERBARUI BARIS INI: Ambil dari objek bersarang 'publisher' jika ada
+  publisherId: profile.publisher_id ?? profile.publisherId ?? profile.publisher?.publisher_id ?? profile.publisher?.id ?? null,
+  
   balance: normalizeDecimal(profile.balance),
 });
 

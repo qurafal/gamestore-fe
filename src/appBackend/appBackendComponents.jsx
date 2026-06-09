@@ -41,6 +41,7 @@ export const Navbar = ({ activePage, onNavigate, isAuthenticated, user, onLogout
         { key: 'library', label: 'Library', icon: Library },
         { key: 'wishlist', label: 'Wishlist', icon: Heart },
         { key: 'profile', label: 'Profile', icon: User },
+        
       ]
     : [
         { key: 'home', label: 'Home', icon: Gamepad2 },

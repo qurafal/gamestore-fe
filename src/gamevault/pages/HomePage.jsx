@@ -32,7 +32,7 @@ export const HomePage = ({
   const hero = featuredProduct || products[0] || null;
 
   useEffect(() => {
-    if (!products.length) return undefined;
+    if (!products.length) return;
     const timer = window.setInterval(() => {
       setHeroIndex((current) => (current + 1) % products.length);
     }, 5500);
@@ -53,6 +53,22 @@ export const HomePage = ({
         >
           {heroProduct ? (
             <div className="flex min-h-[520px] flex-col justify-between rounded-[1.75rem] border border-white/10 bg-black/25 p-5 backdrop-blur-sm lg:p-7">
+              
+              {/* --- IMAGE HERO SECTION --- */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-black/40 shadow-inner mb-4">
+                {heroProduct.coverUrl ? (
+                  <img 
+                    src={heroProduct.coverUrl} 
+                    alt={heroProduct.title} 
+                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-slate-600">
+                    <span className="text-sm">No Preview Available</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between gap-3">
                 <button
                   onClick={() =>
@@ -83,7 +99,7 @@ export const HomePage = ({
               </div>
 
               <div className="space-y-4">
-                <p className="max-w-2xl text-sm leading-7 text-slate-200 md:text-base">
+                <p className="max-w-2xl text-sm leading-7 text-slate-200 md:text-base line-clamp-2">
                   {heroProduct.description}
                 </p>
                 <div className="flex flex-wrap gap-2 text-xs text-slate-200">
@@ -109,7 +125,7 @@ export const HomePage = ({
                     {formatPrice(getDiscountedPrice(heroProduct))}
                   </p>
                   <p className="mt-2 text-xs uppercase tracking-[0.24em] text-slate-300">
-                    {heroProduct.publisher?.name || "Publisher belum tersedia"}
+                    {heroProduct.publisher?.name || "Unknown Studio"}
                   </p>
                 </div>
                 <button
@@ -123,7 +139,7 @@ export const HomePage = ({
           ) : (
             <EmptyState
               title="Katalog belum dimuat"
-              description="Backend belum mengirim data produk, jadi hero carousel belum bisa ditampilkan."
+              description="Backend belum mengirim data produk."
             />
           )}
         </div>
@@ -132,47 +148,13 @@ export const HomePage = ({
           <SectionHeader
             label="At A Glance"
             title="Snapshot"
-            description="Ringkasan cepat untuk akun yang sedang login dan katalog yang aktif."
+            description="Ringkasan akun dan katalog."
           />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <StatCard
-              label="Owned Games"
-              value={ownedCount}
-              hint="Library pribadi"
-              icon={Library}
-              tone="teal"
-            />
-            <StatCard
-              label="Wishlist"
-              value={wishlistCount}
-              hint="Game incaran"
-              icon={Heart}
-              tone="rose"
-            />
-            <StatCard
-              label="Wallet"
-              value={formatPrice(balance)}
-              hint={
-                isAuthenticated ? "Tersambung ke profil" : "Login untuk sinkron"
-              }
-              icon={Wallet}
-              tone="amber"
-            />
-            <StatCard
-              label="Catalog"
-              value={products.length}
-              hint="Produk publik backend"
-              icon={Sparkles}
-              tone="teal"
-            />
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-black/20 p-5 text-sm text-slate-400">
-            <p className="font-semibold text-slate-100">Flow singkat</p>
-            <p className="mt-2 leading-6">
-              Telusuri katalog, simpan wishlist berdasarkan prioritas, lalu
-              checkout dengan balance. Setelah pembelian, library dan review
-              akan ikut tersinkron ke backend.
-            </p>
+            <StatCard label="Owned Games" value={ownedCount} hint="Library pribadi" icon={Library} tone="teal" />
+            <StatCard label="Wishlist" value={wishlistCount} hint="Game incaran" icon={Heart} tone="rose" />
+            <StatCard label="Wallet" value={formatPrice(balance)} hint={isAuthenticated ? "Tersambung" : "Login dulu"} icon={Wallet} tone="amber" />
+            <StatCard label="Catalog" value={products.length} hint="Produk publik" icon={Sparkles} tone="teal" />
           </div>
         </div>
       </section>
@@ -181,13 +163,10 @@ export const HomePage = ({
         <SectionHeader
           label="Top Deals"
           title="Diskon Tertinggi"
-          description="Produk dengan diskon paling besar dan harga akhir paling menarik."
+          description="Produk dengan penawaran terbaik saat ini."
         />
         {topDeals.length === 0 ? (
-          <EmptyState
-            title="Belum ada deal"
-            description="Cek backend katalog untuk data game yang sudah tersedia."
-          />
+          <EmptyState title="Belum ada deal" description="Cek nanti lagi!" />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {topDeals.map((product) => (
@@ -195,8 +174,9 @@ export const HomePage = ({
                 key={product.id}
                 product={product}
                 onOpen={onOpenProduct}
-                onPrimaryAction={() => onOpenProduct(product.id)}
-                secondaryLabel="Open"
+                onBuy={() => onOpenProduct(product.id)}
+                isOwned={false}
+                isAuthenticated={isAuthenticated}
               />
             ))}
           </div>

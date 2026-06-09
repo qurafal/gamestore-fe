@@ -81,7 +81,7 @@ const AppBackend = () => {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const loadCatalog = async (search = catalogQuery) => {
+const loadCatalog = async (search = catalogQuery) => {
     setLoadingCatalog(true);
     setError("");
     try {
@@ -89,17 +89,17 @@ const AppBackend = () => {
       const normalized = dedupeById(
         (response.data || []).map(normalizeProduct),
       );
-      setProducts(normalized);
+      
+      // ✅ TAMBAHKAN BARIS INI: Sortir game dari ID terbesar ke terkecil (Newest First)
+      const sortedNewestFirst = [...normalized].sort((a, b) => b.id - a.id);
+      
+      // ✅ Ubah setProducts menjadi menggunakan data yang sudah disortir
+      setProducts(sortedNewestFirst);
       setCatalogQuery(search);
-      if (!selectedProductId && normalized.length > 0)
-        setSelectedProductId(normalized[0].id);
-      if (
-        !selectedPublisherId &&
-        normalized.length > 0 &&
-        normalized[0].publisher
-      ) {
-        setSelectedPublisherId(normalized[0].publisher.id);
-      }
+      
+      if (!selectedProductId && sortedNewestFirst.length > 0)
+        setSelectedProductId(sortedNewestFirst[0].id);
+        
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -163,14 +163,12 @@ const AppBackend = () => {
     }
   }, [token]);
 
-  useEffect(() => {
-    if (hasPublisherAccess) {
+ useEffect(() => {
+    // Jika user punya akses Publisher dan sedang tidak melihat studio lain, kunci ke studionya sendiri
+    if (hasPublisherAccess && !selectedPublisherId) {
       setSelectedPublisherId(currentUser?.publisherId || null);
-      return;
     }
-
-    setSelectedPublisherId(null);
-  }, [hasPublisherAccess, currentUser?.publisherId]);
+  }, [hasPublisherAccess, currentUser?.publisherId, selectedPublisherId]);
 
   const ownedProductIds = useMemo(
     () => new Set(library.map((item) => item.productId)),
@@ -239,12 +237,16 @@ const AppBackend = () => {
       return;
     }
 
-    if (page === "publisher" && !hasPublisherAccess) {
-      showToast(
-        "Akses dashboard publisher hanya untuk akun dengan role PUBLISHER.",
-        "error",
-      );
-      return;
+    if (page === "publisher") {
+      // if (!hasPublisherAccess) {
+      //   showToast(
+      //     "Akses dashboard publisher hanya untuk akun dengan role PUBLISHER.",
+      //     "error",
+      //   );
+      //   return;
+      // }
+      // ✅ TAMBAHKAN BARIS INI: Kunci dashboard ke ID Publisher milik sendiri
+      setSelectedPublisherId(currentUser?.publisherId || null);
     }
 
     setActivePage(page);
@@ -270,13 +272,13 @@ const AppBackend = () => {
   };
 
   const handleOpenPublisher = (publisherId) => {
-    if (!hasPublisherAccess) {
-      showToast(
-        "Akses dashboard publisher hanya untuk akun dengan role PUBLISHER.",
-        "error",
-      );
-      return;
-    }
+    // if (!hasPublisherAccess) {
+    //   showToast(
+    //     "Akses dashboard publisher hanya untuk akun dengan role PUBLISHER.",
+    //     "error",
+    //   );
+    //   return;
+    // }
 
     if (currentUser?.publisherId && currentUser.publisherId !== publisherId) {
       showToast(
@@ -461,22 +463,47 @@ const AppBackend = () => {
       showToast(requestError.message, "error");
     }
   };
-
-  const handleCreateProduct = async ({ title, price }) => {
+const handleCreateProduct = async ({ title, price, studioName }) => {
     try {
-      const response = await createProduct(token, {
+      const payload = {
         title,
         price: Number(price),
-      });
-      const createdProduct = normalizeProduct(response.data || response);
-      setProducts((current) => dedupeById([createdProduct, ...current]));
-      setSelectedProductId(createdProduct.id);
-      setActivePage("product");
-      showToast(response.message || "Game berhasil dibuat!");
+      };
+      
+      // Jika ini pembuatan studio pertama, sertakan namanya
+      if (studioName) {
+        payload.publisher_name = studioName; 
+      }
+
+      // 1. Eksekusi pembuatan game di backend
+      const response = await createProduct(token, payload);
+      
+      // Ambil ID game baru dari respons backend
+      const newGameId = response.data?.product_id || response.data?.id || response.product_id;
+
+      // 2. Tarik ulang sesi pengguna (agar Role berubah jadi PUBLISHER)
+      await refreshSession(token);
+      
+      // 3. ✨ KUNCI PERBAIKAN ✨ 
+      // Tarik ulang seluruh katalog agar game baru turun membawa relasi nama Publisher-nya secara utuh
+      await loadCatalog(catalogQuery);
+      
+      // 4. Pastikan state Dashboard Publisher mengunci ke ID Studio Anda yang baru
+      const updatedProfile = readStoredProfile();
+      if (updatedProfile?.publisherId) {
+        setSelectedPublisherId(updatedProfile.publisherId);
+      }
+
+      showToast(response.message || "Studio dan game berhasil dibuat!");
+      
+      // Kembalikan objek ID agar modal bisa lanjut ke Langkah 2 (Unggah Kover)
+      return { id: newGameId };
     } catch (requestError) {
       showToast(requestError.message, "error");
+      throw requestError;
     }
   };
+
 
   const handleUploadProductCover = async (productId, coverFile) => {
     if (!coverFile) return;
@@ -543,6 +570,16 @@ const AppBackend = () => {
   const ownedCount = library.length;
   const wishlistCount = wishlist.length;
 
+
+  // const [reviews, setReviews] = useState([]);
+
+//   const loadProductDetail = async (id) => {
+//   // Pastikan backend Anda sudah meng-include reviews
+//   const response = await getProductDetail(id); // Harusnya mengembalikan { product, reviews }
+//   setSelectedProduct(response.data.product);
+//   setReviews(response.data.reviews); // Simpan review ke state
+// };
+
   return (
     <div className="flex min-h-screen flex-col bg-midnight text-slate-100">
       <AppNavbar
@@ -583,6 +620,7 @@ const AppBackend = () => {
 
         {activePage === "product" ? (
           <ProductPage
+            // reviews=
             product={selectedProduct}
             isAuthenticated={isAuthenticated}
             isOwned={
@@ -639,21 +677,15 @@ const AppBackend = () => {
         ) : null}
 
         {activePage === "publisher" ? (
-          hasPublisherAccess ? (
-            <PublisherPage
-              publisher={selectedPublisher}
-              products={publisherCatalog}
-              onOpenProduct={handleOpenProduct}
-              onBack={() => handleNavigate("product")}
-              onCreateProduct={handleCreateProduct}
-              onUploadProductCover={handleUploadProductCover}
-              canManagePublisher={hasPublisherAccess}
-            />
-          ) : (
-            <div className="rounded-[2rem] border border-white/10 bg-carbon/80 p-6 text-slate-300">
-              Akses dashboard publisher ditolak.
-            </div>
-          )
+          <PublisherPage
+            publisher={selectedPublisher}
+            products={publisherCatalog}
+            onOpenProduct={handleOpenProduct}
+            onBack={() => handleNavigate("product")}
+            onCreateProduct={handleCreateProduct}
+            onUploadProductCover={handleUploadProductCover}
+            canManagePublisher={hasPublisherAccess} 
+          />
         ) : null}
 
         {activePage === "checkout" ? (
