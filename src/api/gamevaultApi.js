@@ -134,8 +134,6 @@ const normalizeProduct = (product) => ({
   ageRating: product.age_rating || "Unknown",
   coverUrl: product.cover_url || null,
   
-  // ✅ PERBAIKAN EMAS ANDA ADA DI SINI:
-  // Baca langsung dari 'product.publisher_id' sesuai gambar database Anda
   publisher: product.publisher_id 
     ? { 
         id: product.publisher_id, 
@@ -150,6 +148,19 @@ const normalizeProduct = (product) => ({
         name: platform.name,
       }))
     : [],
+
+  reviews: Array.isArray(product.reviews)
+    ? product.reviews.map((r) => ({
+        id: r.review_id || r.id, // Menerjemahkan review_id dari backend menjadi id
+        rating: Number(r.rating || 5),
+        review_text: r.review_text || '',
+        is_recommend: Boolean(r.is_recommend),
+        helpful_count: Number(r.helpful_count || 0),
+        user: {
+          username: r.user?.username || r.username || 'Anonymous'
+        }
+      }))
+    : []
 });
 
 const normalizeProfile = (profile) => ({

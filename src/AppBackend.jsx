@@ -82,6 +82,7 @@ const AppBackend = () => {
 
       setProduct(data);
       setReviews(data.reviews || []);
+      console.log(reviews);
     } catch (error) {
       console.error("Gagal memuat detail:", error);
       showToast("Gagal memuat detail produk", "error");
@@ -92,6 +93,7 @@ const AppBackend = () => {
   useEffect(() => {
     if (activePage === "product" && selectedProductId) {
       loadProductDetail(selectedProductId);
+      console.log(reviews)
     }
   }, [activePage, selectedProductId]);
   const showToast = (message, kind = "success") => {
@@ -113,10 +115,8 @@ const AppBackend = () => {
         (response.data || []).map(normalizeProduct),
       );
 
-      // ✅ TAMBAHKAN BARIS INI: Sortir game dari ID terbesar ke terkecil (Newest First)
       const sortedNewestFirst = [...normalized].sort((a, b) => b.id - a.id);
 
-      // ✅ Ubah setProducts menjadi menggunakan data yang sudah disortir
       setProducts(sortedNewestFirst);
       setCatalogQuery(search);
 
@@ -370,7 +370,7 @@ const AppBackend = () => {
     showToast("Logout berhasil");
   };
 
-  const handleAddWishlist = async (productId, priority = "medium") => {
+  const handleAddWishlist = async (productId, priority) => {
     if (!isAuthenticated) {
       setActivePage("login");
       setAuthMode("login");
@@ -481,16 +481,33 @@ const AppBackend = () => {
   };
 
   const handleMarkHelpful = async (reviewId) => {
-    if (!reviewId) {
-      showToast("Masukkan review ID terlebih dahulu.", "error");
-      return;
-    }
+    // if (!reviewId) {
+    //   showToast("Masukkan review ID terlebih dahulu.", "error");
+    //   return;
+    // }
 
+    // try {
+    //   await markHelpful(token, Number(reviewId));
+    //   showToast("Helpful vote berhasil dikirim");
+    // } catch (requestError) {
+    //   showToast(requestError.message, "error");
+    // }
+    console.log("ID Ulasan yang diklik:", reviewId);
+    if (!isAuthenticated) {
+      showToast('Login terlebih dahulu untuk memberikan vote.', 'error')
+      return
+    }
     try {
-      await markHelpful(token, Number(reviewId));
-      showToast("Helpful vote berhasil dikirim");
+      // Menembak endpoint POST /api/reviews/:id/helpful
+      await markHelpful(token, Number(reviewId))
+      showToast('Ulasan ditandai sebagai bermanfaat!')
+      
+      // Refresh halaman detail produk untuk memperbarui jumlah helpful_count di layar
+      if (selectedProductId) {
+        await handleOpenProduct(selectedProductId)
+      }
     } catch (requestError) {
-      showToast(requestError.message, "error");
+      showToast(requestError.message, 'error')
     }
   };
   const handleCreateProduct = async ({ title, price, studioName }) => {

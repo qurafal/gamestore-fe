@@ -27,10 +27,8 @@ export const ProductPage = ({
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isRecommend, setIsRecommend] = useState(true);
-  const [helpfulReviewId, setHelpfulReviewId] = useState("");
   const accent = pickPalette(product?.id || 0);
   
-  // const reviews = product.reviews || [];
   if (!product) {
     return (
       <EmptyState
@@ -216,7 +214,7 @@ export const ProductPage = ({
                 </button>
               ))}
             </div>
-          </div>
+          </div>  
 
           <div className="rounded-3xl border border-white/10 bg-black/20 p-4 text-sm text-slate-400">
             <div className="flex items-center gap-2 text-slate-100">
@@ -243,6 +241,7 @@ export const ProductPage = ({
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+        {/* Form Submit Review */}
         <div className="space-y-4 rounded-[2rem] border border-white/10 bg-carbon/80 p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -337,41 +336,56 @@ export const ProductPage = ({
           )}
         </div>
 
+        {/* Panel Review List & Helpful Vote Terintegrasi */}
         <div className="space-y-4 rounded-[2rem] border border-white/10 bg-carbon/80 p-6">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
               Helpful Vote
             </p>
             <h3 className="mt-2 text-2xl font-semibold text-white">
-              Mark review helpful
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Backend menyediakan endpoint anti-spam untuk helpful vote. Jika
-              kamu punya review ID, panel ini bisa digunakan langsung.
-            </p>
-          </div>
-          <section className="mt-10">
-            <h3 className="text-xl font-semibold text-white mb-4">
               User Reviews
             </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Tekan tombol helpful secara langsung pada ulasan pengguna di bawah untuk memberikan dukungan.
+            </p>
+          </div>
+
+          <section className="mt-6">
             {reviews.length > 0 ? (
-              <div className="grid gap-4">
+              <div className="grid gap-4 max-h-[420px] overflow-y-auto pr-1">
                 {reviews.map((review) => (
+
                   <div
-                    key={review.id}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    key={review.review_id}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-3"
                   >
                     <div className="flex justify-between items-center">
                       <p className="font-medium text-white">
                         {review.user?.username || "Anonymous"}
                       </p>
-                      <span className="text-sm text-emerald-400">
+                      <span className="text-sm text-emerald-400 font-semibold">
                         {review.rating} Stars
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-slate-300">
+                    <p className="text-sm text-slate-300 leading-6">
                       {review.review_text}
                     </p>
+                    
+                   
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                      <span className="text-xs text-slate-500">
+                        {review.helpful_count || 0} orang terbantu
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log(review);
+                          onMarkHelpful(review.review_id);}}
+                        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-white"
+                      >
+                        👍 Helpful
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -381,40 +395,6 @@ export const ProductPage = ({
               </p>
             )}
           </section>
-
-          <div className="space-y-3">
-            <label className="text-xs uppercase tracking-[0.22em] text-slate-500">
-              Review ID
-            </label>
-            <input
-              value={helpfulReviewId}
-              onChange={(event) => setHelpfulReviewId(event.target.value)}
-              placeholder="e.g. 12"
-              className="w-full rounded-2xl border border-white/10 bg-black/25 px-3 py-3 text-sm text-white outline-none placeholder:text-slate-500"
-            />
-            <button
-              type="button"
-              onClick={() => onMarkHelpful(helpfulReviewId)}
-              className="rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20"
-            >
-              Mark Helpful
-            </button>
-          </div>
-
-          {/* <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => onOpenLibrary()}
-              className="rounded-full border border-white/10 px-5 py-3 text-sm text-slate-300 transition hover:text-white"
-            >
-              Open Library
-            </button>
-            <button
-              onClick={() => onOpenCheckout(product.id)}
-              className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-500/20"
-            >
-              Checkout
-            </button>
-          </div> */}
         </div>
       </section>
     </div>
